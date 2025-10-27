@@ -7,11 +7,13 @@ import os
 
 app = FastAPI()
 
-YT_DLP_PATH = "yt-dlp"  # Render上ではパス通ってる
+YT_DLP_PATH = "yt-dlp"
 DEFAULT_FORMAT = "bestvideo+bestaudio/best"
 YT_DLP_TIMEOUT = 90
+PROXY_URL = os.environ.get("YT_DLP_PROXY", "http://ytproxy-siawaseok.duckdns.org:3007")
 
 yt_dlp_lock = asyncio.Lock()
+
 
 async def run_yt_dlp(url: str):
     loop = asyncio.get_running_loop()
@@ -20,15 +22,21 @@ async def run_yt_dlp(url: str):
             loop.run_in_executor(
                 None,
                 lambda: subprocess.run(
-                    [YT_DLP_PATH, "-f", DEFAULT_FORMAT, "-j", url],
+                    [
+                        YT_DLP_PATH,
+                        "-f", DEFAULT_FORMAT,
+                        "--proxy", PROXY_URL,
+                        "-j", url,
+                    ],
                     capture_output=True,
                     text=True,
-                    check=True
-                )
+                    check=True,
+                ),
             ),
-            timeout=YT_DLP_TIMEOUT
+            timeout=YT_DLP_TIMEOUT,
         )
         return json.loads(proc.stdout)
+
     except asyncio.TimeoutError:
         raise HTTPException(status_code=504, detail="yt-dlp タイムアウト")
     except subprocess.CalledProcessError as e:
@@ -38,6 +46,7 @@ async def run_yt_dlp(url: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @app.get("/yt-dlp/{video_id}")
 async def yt_dlp_endpoint(video_id: str):
     url = f"https://www.youtube.com/watch?v={video_id}"
@@ -45,7 +54,7 @@ async def yt_dlp_endpoint(video_id: str):
         info = await run_yt_dlp(url)
     return info
 
-# Render は PORT 環境変数を使う
+
 if __name__ == "__main__":
     import uvicorn
     port = int(os.environ.get("PORT", 8000))
