@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 from fastapi import FastAPI, HTTPException
 import asyncio
 import subprocess
@@ -10,7 +9,7 @@ app = FastAPI()
 YT_DLP_PATH = "yt-dlp"
 DEFAULT_FORMAT = "bestvideo+bestaudio/best"
 YT_DLP_TIMEOUT = 90
-PROXY_URL = os.environ.get("YT_DLP_PROXY", "http://ytproxy-siawaseok.duckdns.org:3007")
+PROXY_URL = os.environ.get("YT_DLP_PROXY", "http://ytproxy-siawaseok.duckdns.org:3007") #悪用厳禁で
 
 yt_dlp_lock = asyncio.Lock()
 
